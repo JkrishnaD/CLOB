@@ -1,4 +1,9 @@
-use actix_web::{App, HttpServer, Responder, delete, get, post};
+use actix_web::{App, HttpServer};
+
+mod instructions;
+mod state;
+
+use instructions::*;
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
@@ -11,20 +16,4 @@ async fn main() -> Result<(), std::io::Error> {
     .bind("127.0.0.1:8080")?
     .run()
     .await
-}
-
-#[post("/order")]
-async fn create_order() -> impl Responder {
-    
-    "Order created successfully"
-}
-
-#[delete("/order")]
-async fn delete_order() -> impl Responder {
-    "Order deleted successfully"
-}
-
-#[get("/depth")]
-async fn get_depth() -> impl Responder {
-    "Depth data retrieved successfully"
 }
