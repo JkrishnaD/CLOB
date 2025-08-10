@@ -1,9 +1,9 @@
 use actix_web::{App, HttpServer};
 
-mod instructions;
+mod routes;
 mod state;
 
-use instructions::*;
+use routes::*;
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
