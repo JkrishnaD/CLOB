@@ -1,7 +1,7 @@
-use std::{collections::HashMap, str::FromStr};
-
+use colored::*;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, str::FromStr};
 
 use super::state::{OpenOrder, Side};
 
@@ -67,6 +67,7 @@ impl OrderBook {
         loop {
             // break the loop if the coming order doesn't have any quantity left
             if incoming.quantity <= Decimal::ZERO {
+                println!("Incoming order fully filled, stopping match.");
                 break;
             }
 
@@ -78,6 +79,7 @@ impl OrderBook {
                         let best_price = Decimal::from_str(price).unwrap();
                         (price.clone(), incoming.price >= best_price)
                     } else {
+                        println!("{}", "No asks available to match against".red());
                         return; // Handle the case where there are no best asks
                     }
                 }
@@ -86,6 +88,7 @@ impl OrderBook {
                         let best_price = Decimal::from_str(price).unwrap();
                         (price.clone(), incoming.price <= best_price)
                     } else {
+                        println!("{}", "No bids available to match against".red());
                         return; // Handle the case where there are no best bids
                     }
                 }
@@ -93,7 +96,11 @@ impl OrderBook {
 
             // If the incoming order does not match the best price, exit the loop
             if !is_match {
-                return; // No match found, exit the loop
+                println!(
+                    "Best price {} not matching incoming order price {}.",
+                    best_price_str, incoming.price
+                );
+                return;
             }
 
             // get the book (bids or asks) based on the side of the incoming order
@@ -106,16 +113,51 @@ impl OrderBook {
             if let Some(orders) = book.get_mut(&best_price_str) {
                 if let Some(first_order) = orders.first_mut() {
                     let trade_qty = incoming.quantity.min(first_order.quantity);
+                    println!(
+                        "{}",
+                        format!(
+                            "[Traded] {:?} {} matched with {:?} {} at price {} for quantity {}",
+                            incoming.side,
+                            incoming.order_id,
+                            first_order.side,
+                            first_order.order_id,
+                            best_price_str,
+                            trade_qty
+                        )
+                        .green()
+                    );
+
                     incoming.quantity -= trade_qty;
                     first_order.quantity -= trade_qty;
                     first_order.filled_quantity += trade_qty;
 
-                    if first_order.filled_quantity == first_order.quantity {
-                        orders.remove(0); // remove the order if fully filled
+                    println!(
+                        "{}",
+                        format!(
+                            "Remaining incoming qty: {}, matched order remaining qty: {}",
+                            incoming.quantity, first_order.quantity
+                        )
+                        .blue()
+                    );
+
+                    if first_order.quantity <= Decimal::ZERO {
+                        println!(
+                            "{}",
+                            format!(
+                                "Matched order {} fully filled, removing from book.",
+                                first_order.order_id
+                            )
+                            .blue()
+                        );
+                        orders.remove(0);
                     }
 
                     if orders.is_empty() {
-                        book.remove(&best_price_str); // remove the price level if no orders left
+                        println!(
+                            "{}",
+                            format!("Price level {} empty, removing.", best_price_str).red()
+                        );
+                        book.remove(&best_price_str);
                     }
                 }
             }

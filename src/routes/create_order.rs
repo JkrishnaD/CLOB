@@ -9,6 +9,7 @@ use crate::states::{
     orderbook::OrderBook,
     state::{CreateOrderResponse, OpenOrder},
 };
+use colored::*;
 
 #[post("/order")]
 pub async fn create_order(
@@ -23,23 +24,26 @@ pub async fn create_order(
     let side = body.0.side;
 
     println!(
-        "Parsed order details -> Price: {}, Quantity: {}, User ID: {}, Side: {:?}",
-        price, quantity, user_id, side
+        "{}",
+        format!(
+            "Parsed order details -> Price: {}, Quantity: {}, User ID: {}, Side: {:?}",
+            price, quantity, user_id, side
+        )
+        .blue()
     );
 
     // Lock the orderbook
     let mut ob = match orderbook.lock() {
         Ok(guard) => {
-            println!("[DEBUG] OrderBook lock acquired");
+            println!("{}", "OrderBook lock acquired".red());
             guard
         }
         Err(e) => {
-            println!("[ERROR] Failed to acquire lock: {}", e);
+            println!("Failed to acquire lock: {}", e);
             return HttpResponse::InternalServerError().body("OrderBook lock error");
         }
     };
 
-    println!("Creating order in orderbook...");
     let incoming_order = ob.create_order(price, quantity, side.clone(), user_id);
     println!("Created order: {:?}", incoming_order);
 
