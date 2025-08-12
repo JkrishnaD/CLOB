@@ -7,29 +7,47 @@ use actix_web::{
 
 use crate::states::{
     orderbook::OrderBook,
-    state::{CreateOrder, CreateOrderResponse},
+    state::{CreateOrderResponse, OpenOrder},
 };
 
 #[post("/order")]
 pub async fn create_order(
-    body: Json<CreateOrder>,
+    body: Json<OpenOrder>,
     orderbook: Data<Arc<Mutex<OrderBook>>>,
 ) -> impl Responder {
+    println!("Received order request: {:?}", body);
+
     let price = body.0.price;
     let quantity = body.0.quantity;
     let user_id = body.0.user_id;
     let side = body.0.side;
 
-    // here we need to lock the oerder book so that it comes to the scope
-    let mut ob = orderbook.lock().unwrap();
-    ob.create_order(CreateOrder {
-        price,
-        quantity,
-        user_id,
-        side,
-    });
+    println!(
+        "Parsed order details -> Price: {}, Quantity: {}, User ID: {}, Side: {:?}",
+        price, quantity, user_id, side
+    );
 
-    return HttpResponse::Ok().json(CreateOrderResponse {
-        order_id: String::from("order123"),
-    });
+    // Lock the orderbook
+    let mut ob = match orderbook.lock() {
+        Ok(guard) => {
+            println!("[DEBUG] OrderBook lock acquired");
+            guard
+        }
+        Err(e) => {
+            println!("[ERROR] Failed to acquire lock: {}", e);
+            return HttpResponse::InternalServerError().body("OrderBook lock error");
+        }
+    };
+
+    println!("Creating order in orderbook...");
+    let incoming_order = ob.create_order(price, quantity, side.clone(), user_id);
+    println!("Created order: {:?}", incoming_order);
+
+    println!("Matching orders...");
+    ob.match_orders(incoming_order.clone());
+    println!("Order matching complete");
+
+    HttpResponse::Ok().json(CreateOrderResponse {
+        order_id: incoming_order.order_id,
+    })
 }

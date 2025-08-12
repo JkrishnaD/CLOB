@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use actix_web::{App, HttpServer};
+use actix_web::{App, HttpServer, web::Data};
 
 mod routes;
 mod states;
@@ -14,7 +14,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     HttpServer::new(move || {
         App::new()
-            .app_data(orderbook.clone())
+            .app_data(Data::new(orderbook.clone()))
             .service(create_order)
             .service(delete_order)
             .service(get_depth)

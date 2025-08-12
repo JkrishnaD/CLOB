@@ -1,12 +1,16 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
-pub struct CreateOrder {
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct OpenOrder {
     pub price: Decimal,
     pub quantity: Decimal,
-    pub user_id: String,
     pub side: Side,
+    pub user_id: String,
+    #[serde(skip_deserializing)]
+    pub order_id: String,
+    #[serde(default)]
+    pub filled_quantity: Decimal,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -14,7 +18,7 @@ pub struct CreateOrderResponse {
     pub order_id: String,
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum Side {
     Buy,
     Sell,
