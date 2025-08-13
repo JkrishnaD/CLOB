@@ -3,7 +3,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, str::FromStr};
 
-use super::state::{OpenOrder, Side};
+use super::state::{OpenOrder, OrderStatus, Side};
 
 #[derive(Deserialize, Serialize)]
 pub struct OrderBook {
@@ -38,6 +38,7 @@ impl OrderBook {
             user_id,
             order_id,
             filled_quantity: Decimal::ZERO,
+            status: OrderStatus::Open,
         };
 
         match side {
@@ -162,8 +163,12 @@ impl OrderBook {
                 }
             }
 
-            // If the incoming order is fully filled, exit the loop
-            if incoming.quantity > Decimal::ZERO {
+            if incoming.quantity <= Decimal::ZERO {
+                incoming.status = OrderStatus::Filled;
+                println!("Incoming order fully filled, stopping match.");
+                break;
+            } else {
+                incoming.status = OrderStatus::PartiallyFilled;
                 let book = match incoming.side {
                     Side::Buy => &mut self.bids,
                     Side::Sell => &mut self.asks,
@@ -196,6 +201,13 @@ impl OrderBook {
         // finding the individaul order from the list
         if let Some(order_list) = orders_map.get_mut(&price_str) {
             if let Some(pos) = order_list.iter().position(|o| o.order_id == order_id) {
+                // based on the position getting our order based on the order id
+                let order = &order_list[pos];
+
+                if order.status == OrderStatus::Filled {
+                    return Ok(format!("Order {} is already matched", order_id));
+                }
+
                 order_list.remove(pos);
 
                 if order_list.is_empty() {

@@ -16,8 +16,6 @@ pub async fn create_order(
     body: Json<OpenOrder>,
     orderbook: Data<Arc<Mutex<OrderBook>>>,
 ) -> impl Responder {
-    println!("Received order request: {:?}", body);
-
     let price = body.0.price;
     let quantity = body.0.quantity;
     let user_id = body.0.user_id;

@@ -11,6 +11,17 @@ pub struct OpenOrder {
     pub order_id: String,
     #[serde(default)]
     pub filled_quantity: Decimal,
+    #[serde(skip_deserializing)]
+    pub status: OrderStatus,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Default)]
+pub enum OrderStatus {
+    #[default]
+    Open,
+    PartiallyFilled,
+    Filled,
+    Cancelled,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -26,7 +37,7 @@ pub enum Side {
 
 #[derive(Deserialize, Serialize)]
 pub struct CancelOrder {
-    pub price:Decimal,
+    pub price: Decimal,
     pub order_id: String,
     pub side: Side,
 }
