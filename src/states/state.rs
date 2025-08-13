@@ -25,7 +25,14 @@ pub enum Side {
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct DeleteOrder {
-    pub filled_qty: u32,
-    pub average_price: Decimal,
+pub struct CancelOrder {
+    pub price:Decimal,
+    pub order_id: String,
+    pub side: Side,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct CancelOrderResponse {
+    pub order_id: String,
+    pub message: String,
 }

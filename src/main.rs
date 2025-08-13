@@ -16,7 +16,7 @@ async fn main() -> Result<(), std::io::Error> {
         App::new()
             .app_data(Data::new(orderbook.clone()))
             .service(create_order)
-            .service(delete_order)
+            .service(cancel_order)
             .service(get_depth)
     })
     .bind("127.0.0.1:8080")?

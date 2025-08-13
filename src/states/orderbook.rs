@@ -116,7 +116,7 @@ impl OrderBook {
                     println!(
                         "{}",
                         format!(
-                            "[Traded] {:?} {} matched with {:?} {} at price {} for quantity {}",
+                            "[Traded] {:?} order {} matched with {:?} order {} at price {} for quantity {}",
                             incoming.side,
                             incoming.order_id,
                             first_order.side,
@@ -177,6 +177,50 @@ impl OrderBook {
                 break;
             }
         }
+    }
+
+    pub fn cancel_order(
+        &mut self,
+        price: Decimal,
+        order_id: String,
+        side: Side,
+    ) -> Result<String, String> {
+        let price_str = price.to_string();
+
+        // getting the orders based on the side
+        let orders_map = match side {
+            Side::Buy => &mut self.bids,
+            Side::Sell => &mut self.asks,
+        };
+
+        // finding the individaul order from the list
+        if let Some(order_list) = orders_map.get_mut(&price_str) {
+            if let Some(pos) = order_list.iter().position(|o| o.order_id == order_id) {
+                order_list.remove(pos);
+
+                if order_list.is_empty() {
+                    orders_map.remove(&price_str);
+                }
+                println!(
+                    "{}",
+                    format!("Order {} cancelled succesfully", order_id).green()
+                );
+
+                return Ok(format!("Order {} canceled successfully", order_id));
+            } else {
+                println!(
+                    "{}",
+                    format!("Order {} already canceled or not found", order_id).red()
+                );
+
+                return Err(format!("Order {} already canceled or not found", order_id));
+            }
+        }
+
+        Err(format!(
+            "No orders found at price {} for {:?} side",
+            price, side
+        ))
     }
 
     pub fn get_best_ask(&mut self) -> Option<(&String, &mut Vec<OpenOrder>)> {
