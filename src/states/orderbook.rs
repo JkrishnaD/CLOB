@@ -202,11 +202,13 @@ impl OrderBook {
         if let Some(order_list) = orders_map.get_mut(&price_str) {
             if let Some(pos) = order_list.iter().position(|o| o.order_id == order_id) {
                 // based on the position getting our order based on the order id
-                let order = &order_list[pos];
+                let order = &mut order_list[pos];
 
                 if order.status == OrderStatus::Filled {
                     return Ok(format!("Order {} is already matched", order_id));
                 }
+
+                order.status = OrderStatus::Cancelled;
 
                 order_list.remove(pos);
 
