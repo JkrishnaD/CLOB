@@ -237,6 +237,10 @@ impl OrderBook {
         ))
     }
 
+    pub fn get_depth(&self) -> String {
+        serde_json::to_string_pretty(&self)
+            .unwrap_or_else(|_| "Error while loading orderbook".to_string())
+    }
     pub fn get_best_ask(&mut self) -> Option<(&String, &mut Vec<OpenOrder>)> {
         self.asks
             .iter_mut()
